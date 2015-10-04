@@ -1525,10 +1525,6 @@ function upgrade_430() {
 				$tables = array_diff_assoc( $tables, $global_tables );
 			}
 		}
-
-		foreach ( $tables as $table ) {
-			maybe_convert_table_to_utf8mb4( $table );
-		}
 	}
 }
 
@@ -1710,9 +1706,6 @@ function upgrade_network() {
 				unset( $tables['sitecategories'] );
 			}
 
-			foreach ( $tables as $table ) {
-				maybe_convert_table_to_utf8mb4( $table );
-			}
 		}
 	}
 
@@ -1737,10 +1730,6 @@ function upgrade_network() {
 			// sitecategories may not exist.
 			if ( ! $wpdb->get_var( "SHOW TABLES LIKE '{$tables['sitecategories']}'" ) ) {
 				unset( $tables['sitecategories'] );
-			}
-
-			foreach ( $tables as $table ) {
-				maybe_convert_table_to_utf8mb4( $table );
 			}
 		}
 	}
@@ -1855,49 +1844,6 @@ function maybe_add_column($table_name, $column_name, $create_ddl) {
 		}
 	}
 	return false;
-}
-
-/**
- * If a table only contains utf8 or utf8mb4 columns, convert it to utf8mb4.
- *
- * @since 4.2.0
- *
- * @global wpdb  $wpdb
- *
- * @param string $table The table to convert.
- * @return bool true if the table was converted, false if it wasn't.
- */
-function maybe_convert_table_to_utf8mb4( $table ) {
-	global $wpdb;
-
-	$results = $wpdb->get_results( "SHOW COLUMNS FROM `$table`" );
-	if ( ! $results ) {
-		return false;
-	}
-
-	foreach ( $results as $column ) {
-		if ( $column->Collation ) {
-			list( $charset ) = explode( '_', $column->Collation );
-			$charset = strtolower( $charset );
-			if ( 'utf8' !== $charset && 'utf8mb4' !== $charset ) {
-				// Don't upgrade tables that have non-utf8 columns.
-				return false;
-			}
-		}
-	}
-
-	$table_details = $wpdb->get_row( "SHOW TABLE STATUS LIKE '$table'" );
-	if ( ! $table_details ) {
-		return false;
-	}
-
-	list( $table_charset ) = explode( '_', $table_details->Collation );
-	$table_charset = strtolower( $table_charset );
-	if ( 'utf8mb4' === $table_charset ) {
-		return true;
-	}
-
-	return $wpdb->query( "ALTER TABLE $table CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" );
 }
 
 /**

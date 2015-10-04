@@ -2277,6 +2277,7 @@ class wpdb {
 	 * @return string|WP_Error Table character set, WP_Error object if it couldn't be found.
 	 */
 	protected function get_table_charset( $table ) {
+		return 'utf8mb4';
 		$tablekey = strtolower( $table );
 
 		/**
@@ -2303,7 +2304,7 @@ class wpdb {
 
 		$table_parts = explode( '.', $table );
 		$table = '`' . implode( '`.`', $table_parts ) . '`';
-		$results = $this->get_results( "SHOW COLUMNS FROM $table" );
+		$results = $this->get_results( "SHOW FULL COLUMNS FROM $table" );
 		if ( ! $results ) {
 			return new WP_Error( 'wpdb_get_table_charset_failure' );
 		}
